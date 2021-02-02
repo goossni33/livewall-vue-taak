@@ -2,27 +2,24 @@
   <div>
     <div class="full-width">
       <h1>Home</h1>
-      <h2 v-if="participants.length !== 0">Welkom {{participants[participants.length - 1].name}} bij de cursus.</h2>
+      <h2 v-if="participants.length !== 0">Welkom {{participants[participants.length - 1].naam}} bij de cursus.</h2>
       <div class="participants-list">
-        <div v-for="(participant, index) in participants" :key="index" class="list-item">
-          <div class="body" v-if="!participant.editable">
-            <h3>{{participant.name}}</h3>
-            <p>{{participant.team}}</p>
-          </div>
-          <div class="body" v-else>
-            <input type="text" v-model="participant.name">
-            <input type="text" v-model="participant.team">
-          </div>
-          <div class="button-container">
-            <div @click="toggleEditable(index)" class="button edit circular" :class="{ confirm: participant.editable }"></div>
-            <div @click="deleteItem(index)" class="button delete circular"></div>
-          </div>
-        </div>
+        <ListItem 
+          v-for="(participant, index) in participants" 
+          :key="index"
+          :isEditable="participant.editable"
+          :name="participant.naam"
+          :team="participant.afdeling"
+          :index="index"
+          :onDeleteClick="deleteItem"
+          @toggle-editable="toggleEditable"
+          @click-delete="deleteItem"
+        />
       </div>
       <form>
         <h2>Voeg een deelnemer toe:</h2>
-        <input type="text" v-model="form.name" placeholder="Naam">
-        <input type="text" v-model="form.team" name="team" placeholder="Team">
+        <input type="text" v-model="form.naam" placeholder="Naam">
+        <input type="text" v-model="form.afdeling" placeholder="afdeling">
         <button @click="onSubmit">Toevoegen</button>
       </form>
     </div>
@@ -30,21 +27,6 @@
 </template>
 
 <style lang="scss">
-  .list-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 12px 0;
-    border-bottom: 1px solid grey;
-
-    &:hover {
-      .button-container {
-        display: flex;
-      }
-    }
-  }
-
   form {
     input[type=text] {
       margin-bottom: 8px;
@@ -95,58 +77,58 @@
 </style>
 
 <script>
+import ListItem from '@/components/ListItem.vue';
 export default {
   name: 'Home',
+  components: {
+    ListItem
+  },
   data() {
     return {
       form: {
-        name: '',
-        team: ''
+        naam: '',
+        afdeling: ''
       },
-      participants: [
-        {
-          name: 'Dennis',
-          team: 'engagement',
-          editable: false
-        }, {
-          name: 'Jeffrey',
-          team: 'engagement',
-          editable: false
-        }, {
-          name: 'Pim',
-          team: 'platforms',
-          editable: false
-        }, {
-          name: 'Tom',
-          team: 'platforms',
-          editable: false
-        }
-      ]
+      participants: []
     }
   },
   methods: {
     onSubmit(e) {
       e.preventDefault();
 
-      if(!this.form.name || !this.form.team) {
+      if(!this.form.naam || !this.form.afdeling) {
         return false;
       }
 
-      this.participants.push({
-        name: this.form.name,
-        team: this.form.team,
-        editable: false
-      });
+      this.axios.post('http://dump.lwdev.nl/vue-cursus-api/addDeelnemer/', {
+        naam: this.form.naam,
+        afdeling: this.form.afdeling
+      }).then(() => this.getParticipants());
 
-      this.form.name = '';
-      this.form.team = '';
+      this.form.naam = '';
+      this.form.afdeling = '';
     },
     deleteItem(index) {
-      this.participants.splice(index, 1);
+      this.axios.post("http://dump.lwdev.nl/vue-cursus-api/deleteDeelnemer/", {
+        id: this.participants[index].id
+      }).then(() => this.getParticipants());
     },
     toggleEditable(index) {
       this.participants[index].editable = !this.participants[index].editable;
+    },
+    getParticipants() {
+      this.axios.get('http://dump.lwdev.nl/vue-cursus-api/deelnemers/').then((response) => {
+        this.participants = response.data.map(deelnemer => {
+          return {
+            ...deelnemer,
+            editable: false
+          }
+        });
+      })
     }
+  },
+  created() {
+    this.getParticipants();
   }
 }
 </script>
