@@ -1,11 +1,6 @@
 <template>
   <div>
-    <div class="nav">
-      <div class="full-width">
-        <router-link to="/" class="link">Home</router-link>
-        <router-link to="/about" class="link">About</router-link>
-      </div>
-    </div>
+    <NavBar/>
     <router-view/>
   </div>
 </template>
@@ -26,3 +21,14 @@
     }
   }
 </style>
+
+<script>
+import NavBar from '@/components/NavBar.vue'
+
+export default {
+  name: "App",
+  components: {
+    NavBar
+  }
+};
+</script>
